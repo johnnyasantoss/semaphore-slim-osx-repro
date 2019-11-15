@@ -1,0 +1,46 @@
+trigger:
+  batch: false
+  branches:
+    include:
+      - '*'
+  tags:
+    include:
+      - '*'
+
+variables:
+  BuildConfiguration: 'Release'
+
+jobs:
+  - job: test
+    displayName: Test
+    timeoutInMinutes: 3
+    continueOnError: false
+    strategy:
+      matrix:
+        macos:
+          imageName: macOS-latest
+          rid: osx-x64
+        linux:
+          imageName: ubuntu-18.04
+          rid: linux-x64
+        windows:
+          imageName: windows-2019
+          rid: win-x64
+    pool:
+      vmImage: $(imageName)
+    steps:
+      - task: UseDotNet@2
+        displayName: 'Install current .NET Core'
+        condition: eq(variables['Agent.OS'], 'Darwin')
+        inputs:
+          packageType: sdk
+          version: 3.0.100
+          installationPath: $(Agent.ToolsDirectory)/dotnet
+      - task: DotNetCoreCLI@2
+        displayName: 'Tests'
+        inputs:
+          command: 'test'
+          configuration: $(BuildConfiguration)
+          projects: 'tests/*/*.csproj'
+          publishTestResults: true
+          testRunTitle: 'All tests'
